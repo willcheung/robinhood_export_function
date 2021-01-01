@@ -21,11 +21,16 @@ def lambda_handler(event, context):
             orders = r.export_completed_stock_orders()
             status_code = 200
         else:
-            status_code = 400
-            orders = "Invalid operation."
+            return {
+                'statusCode': 400,
+                'body': 'Invalid operation'
+            }
+
     else:
-        status_code = 400
-        orders = "Invalid operation."
+        return {
+            'statusCode': 400,
+            'body': 'Empty operation'
+        }
 
     return {
         'statusCode': status_code,
