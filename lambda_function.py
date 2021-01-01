@@ -23,13 +23,13 @@ def lambda_handler(event, context):
         else:
             return {
                 'statusCode': 400,
-                'body': 'Invalid operation'
+                'body': 'Invalid operation!'
             }
 
     else:
         return {
             'statusCode': 400,
-            'body': 'Empty operation'
+            'body': 'Empty operation!'
         }
 
     return {
