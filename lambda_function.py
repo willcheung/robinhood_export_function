@@ -9,22 +9,24 @@ def lambda_handler(event, context):
     if "operation" in body:
         if body['operation'] == 'respond_to_challenge':
             response = r.respond_to_challenge(body['challenge_id'], body['sms_code'])
-            
+            print(response)
             if 'challenge' in response and response['challenge']['remaining_attempts'] > 0:
-                print("Challenge not accepted!")
+                print("Challenge not accepted")
                 return {
                     'statusCode': 202,
-                    'challengeId': body['challenge_id'],
-                    'body': 'That code was not correct. {0} tries remaining. Please try again: '.format(
-                        response['challenge']['remaining_attempts'])
+                    'body': json.dumps({ 'challengeId': body['challenge_id'],
+                                            'message': 'That code was not correct. {0} tries remaining. Please try again: '.format(
+                                                response['challenge']['remaining_attempts']) }),
+                    'headers': { 'Access-Control-Allow-Origin' : '*' }
                 }
             else:
-                print("Challenge accepted!")
+                print("Challenge accepted")
                 r.helper.update_session('X-ROBINHOOD-CHALLENGE-RESPONSE-ID', body['challenge_id'])
     else:
         return {
             'statusCode': 400,
-            'body': 'Empty operation!'
+            'body': json.dumps('Empty operation!'),
+            'headers': { 'Access-Control-Allow-Origin' : '*' }
         }
     
     response = r.login(username=body['username'],
@@ -36,15 +38,17 @@ def lambda_handler(event, context):
     if "challenge" in response:
         return {
             'statusCode': 202,
-            'challengeId': response['challenge']['id'],
-            'body': "Please enter Robinhood code for validation."
+            'body': json.dumps({ 'challengeId': response['challenge']['id'],
+                                    'message': "Please enter Robinhood code to verify your identity." }),
+            'headers': { 'Access-Control-Allow-Origin' : '*' }
         }
         
     # Robinhood return error detail
     if "access_token" not in response:
         return {
-            'statusCode': 401,
-            'body': response["detail"]
+            'statusCode': 202,
+            'body': json.dumps({'message': response["detail"]}),
+            'headers': { 'Access-Control-Allow-Origin' : '*' }
         }
 
     # TODO implement different RH exports here
@@ -52,16 +56,25 @@ def lambda_handler(event, context):
         orders = r.export_completed_option_orders()
         return {
             'statusCode': 200,
-            'body': json.dumps(orders)
+            'body': json.dumps(orders),
+            'headers': { 'Access-Control-Allow-Origin' : '*' }
         }
     elif body['operation'] == 'export_stocks_orders':
         orders = r.export_completed_stock_orders()
         return {
             'statusCode': 200,
-            'body': json.dumps(orders)
+            'body': json.dumps(orders),
+            'headers': { 'Access-Control-Allow-Origin' : '*' }
+        }
+    elif body['operation'] == 'respond_to_challenge':
+        return {
+            'statusCode': 201,
+            'body': json.dumps({'message': 'Verified! Click on an Export button above to continue.'}),
+            'headers': { 'Access-Control-Allow-Origin' : '*' }
         }
     else:
         return {
             'statusCode': 400,
-            'body': 'Invalid operation!'
+            'body': json.dumps('Invalid operation!'),
+            'headers': { 'Access-Control-Allow-Origin' : '*' }
         }

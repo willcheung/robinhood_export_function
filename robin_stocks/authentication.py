@@ -108,22 +108,23 @@ def login(username=None, password=None, expiresIn=86400, scope='internal', by_sm
 
     # Get Item
     try:
-        response = table.get_item(Key={'username': username})
+        db_response = table.get_item(Key={'username': username})
     except ClientError as e:
         print(e.response['Error']['Message'])
 
     # If authentication has been stored in DynamoDB then load it. Stops login server from being pinged so much.
-    if response.get('Item'):
+    if db_response.get('Item'):
         # If store_session has been set to false then delete DynamoDB record, otherwise try to load it.
         # Loading from DynamoDB will fail if the acess_token has expired.
         if store_session:
             try:
-                access_token = response['Item']['access_token']
-                token_type = response['Item']['token_type']
-                refresh_token = response['Item']['refresh_token']
+                access_token = db_response['Item']['access_token']
+                token_type = db_response['Item']['token_type']
+                refresh_token = db_response['Item']['refresh_token']
                 # Set device_token to be the original device token when first logged in.
-                new_device_token = response['Item']['device_token']
-                payload['device_token'] = new_device_token
+                existing_device_token = db_response['Item']['device_token']
+                payload['device_token'] = existing_device_token
+                print("Using old device token to avoid challenge.")
                 # Set login status to True in order to try and get account info.
                 helper.set_login_state(True)
                 helper.update_session(
@@ -143,14 +144,16 @@ def login(username=None, password=None, expiresIn=86400, scope='internal', by_sm
                 helper.update_session('Authorization', None)
         else:
             # Delete username from DynamoDB
-            response = table.delete_item(
+            db_response = table.delete_item(
                 Key={
                     'username': username
                 }
             )
             
+    print("Posting to URL")
     data = helper.request_post(url, payload)
-
+    print("After posting to URL")
+    print(data)
     # Handle case where mfa or challenge is required.
     if data:
         if 'mfa_required' in data:
@@ -164,13 +167,15 @@ def login(username=None, password=None, expiresIn=86400, scope='internal', by_sm
                 res = helper.request_post(url, payload, jsonify_data=False)
             data = res.json()
         elif 'challenge' in data:
+            print("Challenged. Saving device_token.")
+            print(data)
             table.put_item(
               Item={
                     'username': username,
                     'token_type': "",
                     'access_token': "",
                     'refresh_token': "",
-                    'device_token': device_token
+                    'device_token': payload['device_token']
                     }
             )
             return(data)
@@ -180,14 +185,15 @@ def login(username=None, password=None, expiresIn=86400, scope='internal', by_sm
             helper.update_session('Authorization', token)
             helper.set_login_state(True)
             data['detail'] = "logged in with brand new authentication code."
+            print("logged in with brand new authentication code.")
             if store_session:
-                response = table.put_item(
+                table.put_item(
                   Item={
                         'username': username,
                         'token_type': data['token_type'],
                         'access_token': data['access_token'],
                         'refresh_token': data['refresh_token'],
-                        'device_token': device_token
+                        'device_token': payload['device_token']
                         }
                 )
         else:
