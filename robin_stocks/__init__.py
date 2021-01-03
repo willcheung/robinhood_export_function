@@ -30,7 +30,8 @@ from .account import get_historical_portfolio,      \
                      load_phoenix_account
 
 from .authentication import login, \
-                            logout
+                            logout, \
+                            respond_to_challenge
 
 from .crypto import load_crypto_profile,        \
                     get_crypto_currency_pairs,  \

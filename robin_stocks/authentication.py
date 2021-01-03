@@ -4,6 +4,7 @@ import os
 import random
 import boto3
 import sys
+import json
 
 import robin_stocks.helper as helper
 import robin_stocks.urls as urls
@@ -48,7 +49,9 @@ def respond_to_challenge(challenge_id, sms_code):
     payload = {
         'response': sms_code
     }
-    return(helper.request_post(url, payload))
+    response = helper.request_post(url, payload)
+    print(response)
+    return(response)
 
 
 def login(username=None, password=None, expiresIn=86400, scope='internal', by_sms=True, store_session=True, mfa_code=None, device_token = generate_device_token()):
@@ -147,6 +150,7 @@ def login(username=None, password=None, expiresIn=86400, scope='internal', by_sm
             )
             
     data = helper.request_post(url, payload)
+
     # Handle case where mfa or challenge is required.
     if data:
         if 'mfa_required' in data:
@@ -160,16 +164,16 @@ def login(username=None, password=None, expiresIn=86400, scope='internal', by_sm
                 res = helper.request_post(url, payload, jsonify_data=False)
             data = res.json()
         elif 'challenge' in data:
-            challenge_id = data['challenge']['id']
-            sms_code = input('Enter Robinhood code for validation: ')
-            res = respond_to_challenge(challenge_id, sms_code)
-            while 'challenge' in res and res['challenge']['remaining_attempts'] > 0:
-                sms_code = input('That code was not correct. {0} tries remaining. Please type in another code: '.format(
-                    res['challenge']['remaining_attempts']))
-                res = respond_to_challenge(challenge_id, sms_code)
-            helper.update_session(
-                'X-ROBINHOOD-CHALLENGE-RESPONSE-ID', challenge_id)
-            data = helper.request_post(url, payload)
+            table.put_item(
+              Item={
+                    'username': username,
+                    'token_type': "",
+                    'access_token': "",
+                    'refresh_token': "",
+                    'device_token': device_token
+                    }
+            )
+            return(data)
         # Update Session data with authorization or raise exception with the information present in data.
         if 'access_token' in data:
             token = '{0} {1}'.format(data['token_type'], data['access_token'])
@@ -187,9 +191,10 @@ def login(username=None, password=None, expiresIn=86400, scope='internal', by_sm
                         }
                 )
         else:
-            raise Exception(data['detail'])
+            return(data)
     else:
         raise Exception('Error: Trouble connecting to robinhood API. Check internet connection.')
+    
     return(data)
 
 
