@@ -15,7 +15,7 @@ def lambda_handler(event, context):
                 return {
                     'statusCode': 202,
                     'body': json.dumps({ 'challengeId': body['challenge_id'],
-                                            'message': 'That code was not correct. {0} tries remaining. Please try again: '.format(
+                                            'message': 'That code was not correct. {0} tries remaining. Please try again. '.format(
                                                 response['challenge']['remaining_attempts']) }),
                     'headers': { 'Access-Control-Allow-Origin' : '*' }
                 }
@@ -69,7 +69,7 @@ def lambda_handler(event, context):
     elif body['operation'] == 'respond_to_challenge':
         return {
             'statusCode': 201,
-            'body': json.dumps({'message': 'Verified! Click on an Export button above to continue.'}),
+            'body': json.dumps({'message': 'Verified! Click on a button above to export.'}),
             'headers': { 'Access-Control-Allow-Origin' : '*' }
         }
     else:
