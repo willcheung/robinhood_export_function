@@ -66,6 +66,13 @@ def lambda_handler(event, context):
             'body': json.dumps(orders),
             'headers': { 'Access-Control-Allow-Origin' : '*' }
         }
+    elif body['operation'] == 'export_dividends':
+        dividends = r.account.get_dividends()
+        return {
+            'statusCode': 200,
+            'body': json.dumps(dividends),
+            'headers': { 'Access-Control-Allow-Origin' : '*' }
+        }
     elif body['operation'] == 'respond_to_challenge':
         return {
             'statusCode': 201,
