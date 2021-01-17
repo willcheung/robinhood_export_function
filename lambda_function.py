@@ -29,8 +29,14 @@ def lambda_handler(event, context):
             'headers': { 'Access-Control-Allow-Origin' : '*' }
         }
     
+    if "email" in body:
+        user_email = body['email']
+    else:
+        user_email = ""
+        
     response = r.login(username=body['username'],
                         password=body['password'],
+                        email=user_email,
                         expiresIn=86400,
                         by_sms=True)
     
@@ -76,7 +82,7 @@ def lambda_handler(event, context):
     elif body['operation'] == 'respond_to_challenge':
         return {
             'statusCode': 201,
-            'body': json.dumps({'message': 'Verified! Click on a button above to export.'}),
+            'body': json.dumps({'message': 'Verified! Now try exporting again.'}),
             'headers': { 'Access-Control-Allow-Origin' : '*' }
         }
     else:

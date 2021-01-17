@@ -54,7 +54,7 @@ def respond_to_challenge(challenge_id, sms_code):
     return(response)
 
 
-def login(username=None, password=None, expiresIn=86400, scope='internal', by_sms=True, store_session=True, mfa_code=None, device_token = generate_device_token()):
+def login(username=None, password=None, email=None, expiresIn=86400, scope='internal', by_sms=True, store_session=True, mfa_code=None, device_token = generate_device_token()):
     """This function will effectively log the user into robinhood by getting an
     authentication token and saving it to the session header. By default, it
     will store the authentication token in DynamoDB and load that value
@@ -190,6 +190,7 @@ def login(username=None, password=None, expiresIn=86400, scope='internal', by_sm
                 table.put_item(
                   Item={
                         'username': username,
+                        'email': email,
                         'token_type': data['token_type'],
                         'access_token': data['access_token'],
                         'refresh_token': data['refresh_token'],
