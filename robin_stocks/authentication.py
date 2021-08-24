@@ -157,15 +157,19 @@ def login(username=None, password=None, email=None, expiresIn=86400, scope='inte
     # Handle case where mfa or challenge is required.
     if data:
         if 'mfa_required' in data:
-            mfa_token = input("Please type in the MFA code: ")
-            payload['mfa_code'] = mfa_token
-            res = helper.request_post(url, payload, jsonify_data=False)
-            while (res.status_code != 200):
-                mfa_token = input(
-                    "That MFA code was not correct. Please type in another MFA code: ")
-                payload['mfa_code'] = mfa_token
-                res = helper.request_post(url, payload, jsonify_data=False)
-            data = res.json()
+            print("MFA Required. Saving device_token.")
+            print(data)
+            table.put_item(
+              Item={
+                    'username': username,
+                    'token_type': "",
+                    'access_token': "",
+                    'refresh_token': "",
+                    'device_token': payload['device_token']
+                    }
+            )
+            return(data)
+
         elif 'challenge' in data:
             print("Challenged. Saving device_token.")
             print(data)

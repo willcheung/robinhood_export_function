@@ -33,12 +33,18 @@ def lambda_handler(event, context):
         user_email = body['email']
     else:
         user_email = ""
-        
+    
+    if "mfa_code" in body:
+        mfa_code = body['mfa_code']
+    else:
+        mfa_code = None
+
     response = r.login(username=body['username'],
                         password=body['password'],
                         email=user_email,
                         expiresIn=86400,
-                        by_sms=True)
+                        by_sms=True,
+                        mfa_code=mfa_code)
     
     # First time challenge goes here b/c operation=export
     if "challenge" in response:
@@ -48,7 +54,14 @@ def lambda_handler(event, context):
                                     'message': "Please enter Robinhood code to verify your identity." }),
             'headers': { 'Access-Control-Allow-Origin' : '*' }
         }
-        
+    
+    if "mfa_required" in response:
+        return {
+            'statusCode': 202,
+            'body': json.dumps({ 'mfa_required': response['mfa_required'],
+                                    'message': "Please enter Robinhood Two-Factor-Authentication code." }),
+            'headers': { 'Access-Control-Allow-Origin' : '*' }
+        }
     # Robinhood return error detail
     if "access_token" not in response:
         return {
